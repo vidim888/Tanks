@@ -3,7 +3,6 @@ __author__ = 'Vadim'
 import pygame
 import time
 import math
-import cmath
 import random
 pygame.init()
 display_width = 800
