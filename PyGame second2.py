@@ -315,7 +315,8 @@ def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, playe
         pygame.display.update()
         clock.tick(FPS)
     # ideal_power = ((2*(((enemyTankX+tankHeight*math.sin(enemyAngle)-mainTankX-2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY))**2-(a**2-1)*((enemyTankX+tankHeight*math.sin(enemyAngle))**2+mainTankX**2-2*(enemyTankX+tankHeight*math.sin(enemyAngle))*mainTankX))**0.5-enemyTankX-tankHeight*math.sin(enemyAngle)+mainTankX+2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY)))/((a**2-1)*math.sin(2*enemyAngle)))**0.5
-    return enemyTankX, enemyAngle, ideal_power
+    i_power = ideal_power + random.randrange(-10, 10)
+    return enemyTankX, enemyAngle, ideal_power, i_power
 def health_bars(player_health, enemy_health):
     if player_health > 0.75*start_health:
         player_health_color = green
@@ -384,8 +385,8 @@ def gameLoop():
                     pause()
                 if event.key == pygame.K_SPACE:
                     player_health, enemy_health = fireShell(mainTankX, turretAngle, fire_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health)
-                    enemyTankX, enemyAngle, enemy_power = enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight)
-                    player_health, enemy_health = fireShell(enemyTankX, enemyAngle, enemy_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health)
+                    enemyTankX, enemyAngle, enemy_power, i_power = enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight)
+                    player_health, enemy_health = fireShell(enemyTankX, enemyAngle, i_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health)
                 if event.key == pygame.K_a:
                     power_change = -1
                 if event.key == pygame.K_d:
