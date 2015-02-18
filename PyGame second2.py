@@ -59,6 +59,8 @@ def message_to_screen(msg,color, y_displace=0, size="small"):
     gameDisplay.blit(textSurf, textRect)
 def game_controls():
     gcont = True
+    difficulty = ['easy', 'medium', 'hard', 'impossible']
+    x = 0
     while gcont:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -73,6 +75,8 @@ def game_controls():
         button("Play", 150, 500, 100, 50, green, light_green, "play")
         button("Main", 350, 500, 100, 50, yellow, light_yellow, "main")
         button("Quit", 550, 500, 100, 50, red, light_red, "quit")
+        textSurface, textRect = text_objects("Difficulty: "+difficulty[x % 4], black)
+        x = button("Difficulty: "+difficulty[x % 4], 190-textRect[2]/2, 550, textRect[2]+20, 50, white, grey, "difficulty", x)
         pygame.display.update()
         clock.tick(FPS)
 def button(text, x, y, width, height, inactive_color, active_color, action=None, xx=0):
@@ -157,7 +161,7 @@ def game_over():
         message_to_screen("Game Over", green, -100, "large")
         message_to_screen("You died", black, -30)
         button("Play again", 150, 500, 120, 50, green, light_green, "play")
-        button("Controls", 350, 500, 100, 50, yellow, light_yellow, "controls")
+        button("Main", 350, 500, 100, 50, yellow, light_yellow, "main")
         button("Quit", 550, 500, 100, 50, red, light_red, "quit")
         pygame.display.update()
         clock.tick(FPS)
@@ -172,7 +176,7 @@ def you_win():
         message_to_screen("You won!", green, -100, "large")
         message_to_screen("Congratulations!", black, -30)
         button("Play again", 150, 500, 120, 50, green, light_green, "play")
-        button("Controls", 350, 500, 100, 50, yellow, light_yellow, "controls")
+        button("Main", 350, 500, 100, 50, yellow, light_yellow, "main")
         button("Quit", 550, 500, 100, 50, red, light_red, "quit")
         pygame.display.update()
         clock.tick(FPS)
