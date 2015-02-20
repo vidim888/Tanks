@@ -4,6 +4,20 @@ import pygame
 import time
 import math
 import random
+class FireShell:
+    def __init__(self, d_magnitude, explosion_size, explosion_damage, mass, shell_radius, hit_damage, name):
+        self.d_magnitude = d_magnitude
+        self.explosion_size = explosion_size
+        self.explosion_damage = explosion_damage
+        self.mass = mass
+        self.shell_radius = shell_radius
+        self.hit_damage = hit_damage
+        self.name = name
+standard = FireShell(1, 50, [1, 5], 50, 5, 10, "standard")
+sniper = FireShell(3, 4, [10, 20], 20, 2, 150, "sniper")
+high_explosive = FireShell(0.5, 25, [3, 7], 70, 7, 5, "high-explosive")
+splinter = FireShell(3, 300, [3, 7], 30, 3, 30, "splinter")
+shell_list = [standard, sniper, high_explosive, splinter]
 pygame.init()
 display_width = 800
 display_height = 600
@@ -130,12 +144,6 @@ def game_intro():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_c:
-                    intro = False
-                elif event.key == pygame.K_q:
-                    pygame.quit()
-                    quit()
         gameDisplay.fill(white)
         message_to_screen("Welcome to Tanks!", green, -100, "large")
         message_to_screen("The objective is to shoot and destroy", black, -30)
@@ -182,7 +190,7 @@ def you_win():
         clock.tick(FPS)
 def barrier(xlocation, randomHeight, barrier_width):
     pygame.draw.rect(gameDisplay, black, [xlocation, display_height-randomHeight, barrier_width, randomHeight])
-def explosion(x, y, mainTankX, enemyTankX, player_health, enemy_health, size=50):
+def explosion(x, y, mainTankX, enemyTankX, player_health, enemy_health, shell_type):
     explode = True
     while explode:
         for event in pygame.event.get():
@@ -191,12 +199,12 @@ def explosion(x, y, mainTankX, enemyTankX, player_health, enemy_health, size=50)
                 quit()
         colorChoices = [red, light_red, yellow, light_yellow]
         magnitude = 1
-        while magnitude < size:
-            exploding_bit_x = x + random.randrange(-1*magnitude, magnitude)
-            exploding_bit_y = y + random.randrange(-1*magnitude, magnitude)
-            r = random.randrange(1, 5)
+        while magnitude <= shell_type.explosion_size:
+            exploding_bit_x = x + random.randrange(int(-1*magnitude), int(magnitude))
+            exploding_bit_y = y + random.randrange(int(-1*magnitude), int(magnitude))
+            r = random.randrange(shell_type.explosion_damage[0], shell_type.explosion_damage[1])
             pygame.draw.circle(gameDisplay, colorChoices[random.randrange(0, 4)], (int(exploding_bit_x), int(exploding_bit_y)), r)
-            magnitude += 1
+            magnitude += shell_type.d_magnitude
             if mainTankX - tankWidth/2 <= exploding_bit_x <= mainTankX + tankWidth/2 and tankY <= exploding_bit_y <= display_height - ground_height or mainTankX - tankHeight/2 <= exploding_bit_x <= mainTankX + tankHeight/2 and tankY - tankHeight/2 <= exploding_bit_y <= tankY:
                 player_health -= r
             if enemyTankX - tankWidth/2 <= exploding_bit_x <= enemyTankX + tankWidth/2 and tankY <= exploding_bit_y <= display_height - ground_height or enemyTankX - tankHeight/2 <= exploding_bit_x <= enemyTankX + tankHeight/2 and tankY - tankHeight/2 <= exploding_bit_y <= tankY:
@@ -204,7 +212,7 @@ def explosion(x, y, mainTankX, enemyTankX, player_health, enemy_health, size=50)
             pygame.display.update()
             clock.tick(100)
         return(player_health, enemy_health)
-def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, enemyTankX, player_health, enemy_health, wind, enemy_power=0, turretAngle=0, enemyAngle=0):
+def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, enemyTankX, player_health, enemy_health, wind, shell_type, enemy_power=0, turretAngle=0, enemyAngle=0):
     fire = True
     turPosY = tankHeight*math.cos(angle)
     turPosX = tankHeight*math.sin(angle)
@@ -220,7 +228,7 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        power_x += wind/50
+        power_x += wind/shell_type.mass
         shellPos[0] += power_x*dt
         dy = power_y*t - a*(t**2)/2
         shellPos[1] = tankY - turPosY - dy
@@ -232,7 +240,7 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
             # if shellPos[0] < 0 or shellPos[0] > 800 or shellPos[1] > 600 or shellPos[1] < -5000:
         if check_x1 and check_x2 and check_y1 and check_y2:
             if draw:
-                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health)
+                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health, shell_type)
                 return player_health, enemy_health
             if not draw:
                 return 1
@@ -240,13 +248,13 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
         if draw:
             if mainTankX - tankWidth/2 <= shellPos[0] <= mainTankX + tankWidth/2 and tankY <= shellPos[1] <= display_height - ground_height \
                     or mainTankX - tankHeight/2 <= shellPos[0] <= mainTankX + tankHeight/2 and tankY - tankHeight/2 <= shellPos[1] <= tankY:
-                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health)
-                player_health -= 5
+                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health, shell_type)
+                player_health -= shell_type.hit_damage
                 return player_health, enemy_health
             elif enemyTankX - tankWidth/2 <= shellPos[0] <= enemyTankX + tankWidth/2 and tankY <= shellPos[1] <= display_height - ground_height \
                     or enemyTankX - tankHeight/2 <= shellPos[0] <= enemyTankX + tankHeight/2 and tankY - tankHeight/2 <= shellPos[1] <= tankY:
-                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health)
-                enemy_health -= 5
+                player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health, shell_type)
+                enemy_health -= shell_type.hit_damage
                 return player_health, enemy_health
         if shellPos[1] > display_height - ground_height:
             # hit_x = xo + power_x*((power_y+(power_y**2 + 2*a*(turPosY + display_height - ground_height - yo))**0.5)/a)
@@ -255,16 +263,17 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
             if not draw:
                 return hit_x
             if draw:
-                player_health, enemy_health = explosion(hit_x, hit_y, mainTankX, enemyTankX, player_health, enemy_health)
+                player_health, enemy_health = explosion(hit_x, hit_y, mainTankX, enemyTankX, player_health, enemy_health, shell_type)
                 return player_health, enemy_health
             fire = False
         if draw:
-            draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight)
-            pygame.draw.circle(gameDisplay, red, (int(shellPos[0]), int(shellPos[1])), 5)
+            draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight, shell_type)
+            pygame.draw.circle(gameDisplay, red, (int(shellPos[0]), int(shellPos[1])), shell_type.shell_radius)
             pygame.display.update()
             clock.tick(FPS/dt)
 def power(lvl, whos):
-    text = smallfont.render("Power: " + str(lvl) + "%", True, black)
+    lvl = str(int(lvl/max_power*100))
+    text = smallfont.render("Power: " + lvl + "%", True, black)
     if whos == 'player':
         gameDisplay.blit(text, [display_width*0.78, 1])
     elif whos == 'enemy':
@@ -272,6 +281,10 @@ def power(lvl, whos):
 def windlvl(lvl):
     text = smallfont.render("Wind: " + str(lvl), True, black)
     gameDisplay.blit(text, [display_width*0.5, 1])
+def shell_type_draw(shell_type):
+    text = smallfont.render("Shell type: " + shell_type.name, True, black)
+    textSurface, textRect = text_objects("Shell type: " + shell_type.name, black)
+    gameDisplay.blit(text, [display_width-5-textRect[2], display_height*0.1])
 def tank(x, angle):
     x = int(x)
     y = int(tankY)
@@ -284,18 +297,19 @@ def tank(x, angle):
     for i in range(7):
         pygame.draw.circle(gameDisplay, black, (x-startX+wheelWidth, y+tankHeight), wheelWidth)
         startX -= wheelWidth
-def draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight):
+def draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight, shell_type):
     gameDisplay.fill(white)
     power(fire_power, 'player')
     power(int(enemy_power), 'enemy')
     windlvl(wind)
+    shell_type_draw(shell_type)
     health_bars(player_health, enemy_health)
     tank(mainTankX, turretAngle)
     tank(enemyTankX, enemyAngle)
     barrier(xlocation, randomHeight, barrier_width)
     gameDisplay.fill(green, rect = [0, display_height - ground_height, display_width, ground_height])
-def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight, d_power, wind):
-    r_t = random.randint(5, 20)
+def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight, bot_power, wind, enemy_shell_type, shell_type):
+    r_t = random.randint(5, 40)
     direction = random.randint(-2, 1)
     if enemyTankX + tankWidth/2 > xlocation - tankSpeed*1.1:
         tankMove = -tankSpeed
@@ -320,7 +334,7 @@ def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, playe
     ideal_power = 0
     while not found:
         for turn in range(30, max_power+1):
-            hit_dot = fireShell(enemyTankX+move_change, trying_angle, turn, xlocation, randomHeight, False, mainTankX, enemyTankX, player_health, enemy_health, wind)
+            hit_dot = fireShell(enemyTankX+move_change, trying_angle, turn, xlocation, randomHeight, False, mainTankX, enemyTankX, player_health, enemy_health, wind, enemy_shell_type)
             ideal_power = turn
             if mainTankX < hit_dot < mainTankX + 20:
                 newEnemyAngle = trying_angle
@@ -337,14 +351,14 @@ def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, playe
         enemy_power += (ideal_power-this_power)/r_t
         if enemyTankX + tankWidth/2 > xlocation or enemyTankX - tankWidth/2 < 0:
             enemyAngle -= (newEnemyAngle-this_angle)/r_t
-        draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight)
+        draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight, shell_type)
         pygame.display.update()
         clock.tick(FPS)
     # ideal_power = ((2*(((enemyTankX+tankHeight*math.sin(enemyAngle)-mainTankX-2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY))**2-(a**2-1)*((enemyTankX+tankHeight*math.sin(enemyAngle))**2+mainTankX**2-2*(enemyTankX+tankHeight*math.sin(enemyAngle))*mainTankX))**0.5-enemyTankX-tankHeight*math.sin(enemyAngle)+mainTankX+2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY)))/((a**2-1)*math.sin(2*enemyAngle)))**0.5
-    if d_power == 0:
+    if bot_power == 0:
         i_power = ideal_power
     else:
-        i_power = ideal_power + random.randrange(-d_power/2, d_power)
+        i_power = ideal_power + random.randrange(-bot_power/2, bot_power)
     return enemyTankX, enemyAngle, ideal_power, i_power
 def health_bars(player_health, enemy_health):
     if player_health > 0.75*start_health:
@@ -359,23 +373,23 @@ def health_bars(player_health, enemy_health):
         enemy_health_color = yellow
     else:
         enemy_health_color = red
-    pygame.draw.rect(gameDisplay, black, (int(display_width*0.8)-2, int(display_height*0.06)-2, 104, 29))
-    pygame.draw.rect(gameDisplay, black, (int(display_width*0.1)-2, int(display_height*0.06)-2, 104, 29))
-    pygame.draw.rect(gameDisplay, white, (int(display_width*0.8), int(display_height*0.06), 100, 25))
-    pygame.draw.rect(gameDisplay, white, (int(display_width*0.1), int(display_height*0.06), 100, 25))
-    pygame.draw.rect(gameDisplay, player_health_color, (int(display_width*0.8), int(display_height*0.06), player_health*100/start_health, 25))
-    pygame.draw.rect(gameDisplay, enemy_health_color, (int(display_width*0.1), int(display_height*0.06), enemy_health*100/start_health, 25))
+    pygame.draw.rect(gameDisplay, black, (int(display_width*0.8)-2, int(display_height*0.06)-2, 104, int(display_height/24)+4))
+    pygame.draw.rect(gameDisplay, black, (int(display_width*0.1)-2, int(display_height*0.06)-2, 104, int(display_height/24)+4))
+    pygame.draw.rect(gameDisplay, white, (int(display_width*0.8), int(display_height*0.06), 100, int(display_height/24)))
+    pygame.draw.rect(gameDisplay, white, (int(display_width*0.1), int(display_height*0.06), 100, int(display_height/24)))
+    pygame.draw.rect(gameDisplay, player_health_color, (int(display_width*0.8), int(display_height*0.06), player_health*100/start_health, int(display_height/24)))
+    pygame.draw.rect(gameDisplay, enemy_health_color, (int(display_width*0.1), int(display_height*0.06), enemy_health*100/start_health, int(display_height/24)))
 def gameLoop(dif):
     gameExit = False
     gameOver = False
     if dif == 0:
-        d_power = 10
+        bot_power = 10
     elif dif == 1:
-        d_power = 6
+        bot_power = 6
     elif dif == 2:
-        d_power = 2
+        bot_power = 2
     elif dif == 3:
-        d_power = 0
+        bot_power = 0
     mainTankX = display_width * 0.9
     enemyTankX = display_width * 0.1
     tankMove = 0
@@ -383,6 +397,7 @@ def gameLoop(dif):
     enemyAngle = math.pi/4
     turretAngled = 0
     fire_power = int(max_power/2)
+    shell_type_number = 0
     enemy_power = max_power
     power_change = 0
     wind = 0
@@ -422,23 +437,27 @@ def gameLoop(dif):
                 if event.key == pygame.K_p:
                     pause()
                 if event.key == pygame.K_SPACE:
-                    player_health, enemy_health = fireShell(mainTankX, turretAngle, fire_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health, wind, enemy_power, turretAngle, enemyAngle)
+                    player_health, enemy_health = fireShell(mainTankX, turretAngle, fire_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health, wind, shell_type, enemy_power, turretAngle, enemyAngle)
                     if player_health < 0:
                         game_over()
                     elif enemy_health < 0:
                         you_win()
-                    enemyTankX, enemyAngle, enemy_power, i_power = enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight, d_power, wind)
-                    player_health, enemy_health = fireShell(enemyTankX, enemyAngle, i_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health, wind, enemy_power, turretAngle, enemyAngle)
+                    enemy_shell_type = shell_list[random.randint(0, len(shell_list)-1)]
+                    enemyTankX, enemyAngle, enemy_power, i_power = enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, player_health, enemy_health, mainTankX, turretAngle, xlocation, randomHeight, bot_power, wind, enemy_shell_type, shell_type)
+                    player_health, enemy_health = fireShell(enemyTankX, enemyAngle, i_power, xlocation, randomHeight, True, mainTankX, enemyTankX, player_health, enemy_health, wind, enemy_shell_type, enemy_power, turretAngle, enemyAngle)
                     if player_health < 0:
                         game_over()
                     elif enemy_health < 0:
                         you_win()
                     wind = random.randrange(-10, 10)
-                    print(wind)
-                if event.key == pygame.K_a:
+                if event.key == pygame.K_s:
                     power_change = -1
-                if event.key == pygame.K_d:
+                if event.key == pygame.K_w:
                     power_change = 1
+                if event.key == pygame.K_a:
+                    shell_type_number -= 1
+                if event.key == pygame.K_d:
+                    shell_type_number += 1
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT and tankMove < 0:
                     tankMove = 0
@@ -448,9 +467,9 @@ def gameLoop(dif):
                     turretAngled = 0
                 elif event.key == pygame.K_UP and turretAngled > 0:
                     turretAngled = 0
-                if event.key == pygame.K_a and power_change < 0:
+                if event.key == pygame.K_s and power_change < 0:
                     power_change = 0
-                elif event.key == pygame.K_d and power_change > 0:
+                elif event.key == pygame.K_w and power_change > 0:
                     power_change = 0
         if turretAngle <= -math.pi/2 and turretAngled <= 0 or turretAngle >= math.pi/2 and turretAngled >= 0:
             turretAngled = 0
@@ -461,7 +480,8 @@ def gameLoop(dif):
             fire_power -= power_change
         turretAngle += turretAngled
         fire_power += power_change
-        draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight)
+        shell_type = shell_list[shell_type_number % len(shell_list)]
+        draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight, shell_type)
         pygame.display.update()
         clock.tick(FPS)
     pygame.quit()
