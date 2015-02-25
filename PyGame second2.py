@@ -16,15 +16,13 @@ class FireShell:
 standard = FireShell(1, 50, [1, 5], 50, 5, 10, "standard")
 sniper = FireShell(3, 4, [10, 20], 20, 2, 150, "sniper")
 high_explosive = FireShell(0.5, 25, [3, 7], 70, 7, 5, "high-explosive")
-splinter = FireShell(3, 300, [3, 7], 30, 3, 30, "splinter")
+splinter = FireShell(3, 300, [1, 7], 30, 3, 30, "splinter")
 shell_list = [standard, sniper, high_explosive, splinter]
 pygame.init()
 display_width = 800
 display_height = 600
 gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Tanks')
-# icon = pygame.image.load("apple.png")
-# pygame.display.set_icon(icon)
 white = (255, 255, 255)
 grey = (170, 170, 170)
 black = (0, 0, 0)
@@ -50,8 +48,6 @@ a = 9.8
 smallfont = pygame.font.SysFont("comicsansms", 25)
 medfont = pygame.font.SysFont("comicsansms", 50)
 largefont = pygame.font.SysFont("comicsansms", 85)
-# img = pygame.image.load('snakehead.png')
-# appleimg = pygame.image.load('apple.png')
 def score(score):
     text = smallfont.render("Score: "+str(score), True, black)
     gameDisplay.blit(text, [0,0])
@@ -83,9 +79,11 @@ def game_controls():
         gameDisplay.fill(white)
         message_to_screen("Controls", green, -100, "large")
         message_to_screen("Fire: Spacebar", black, -30)
-        message_to_screen("Move Turret: Up and Down arrows", black, 10)
-        message_to_screen("Move Tank: Left and Right arrows", black, 50)
-        message_to_screen("Pause: P", black, 90)
+        message_to_screen("Move Turret: Up and Down arrows", black, 0)
+        message_to_screen("Move Tank: Left and Right arrows", black, 30)
+        message_to_screen("Change Power: W and S", black, 60)
+        message_to_screen("Change Fire Shell type: A and D", black, 90)
+        message_to_screen("Pause: P", black, 120)
         button("Play", 150, 500, 100, 50, green, light_green, "play")
         button("Main", 350, 500, 100, 50, yellow, light_yellow, "main")
         button("Quit", 550, 500, 100, 50, red, light_red, "quit")
@@ -147,13 +145,11 @@ def game_intro():
         gameDisplay.fill(white)
         message_to_screen("Welcome to Tanks!", green, -100, "large")
         message_to_screen("The objective is to shoot and destroy", black, -30)
-        message_to_screen("the enemy tank before they destroy you.", black, 10)
-        message_to_screen("The more enemies you destroy, the harder they get.", black, 50)
-        # message_to_screen("Press C to play, P to pause or Q to quit",black,180)
+        message_to_screen("the enemy tank before it destroys you.", black, 10)
+        message_to_screen("There are 4 difficulties to challenge yourself.", black, 50)
         button("Play", 150, 500, 100, 50, green, light_green, "play", x)
         button("Controls", 350, 500, 100, 50, yellow, light_yellow, "controls", x)
         button("Quit", 550, 500, 100, 50, red, light_red, "quit", x)
-        # x = button("Difficulty: "+difficulty[x % 4], 100, 550, 200, 50, white, grey, "difficulty", x)
         textSurface, textRect = text_objects("Difficulty: "+difficulty[x % 4], black)
         x = button("Difficulty: "+difficulty[x % 4], 190-textRect[2]/2, 550, textRect[2]+20, 50, white, grey, "difficulty", x)
         pygame.display.update()
@@ -217,8 +213,6 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
     turPosY = tankHeight*math.cos(angle)
     turPosX = tankHeight*math.sin(angle)
     shellPos = [x + turPosX, tankY - turPosY]
-    # yo = shellPos[1]
-    # xo = shellPos[0]
     dt = 0.1
     t = dt
     power_x = fire_power*math.sin(angle)
@@ -237,7 +231,6 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
         check_x2 = shellPos[0] <= xlocation + barrier_width
         check_y1 = shellPos[1] >= display_height - randomHeight
         check_y2 = shellPos[1] <= display_height
-            # if shellPos[0] < 0 or shellPos[0] > 800 or shellPos[1] > 600 or shellPos[1] < -5000:
         if check_x1 and check_x2 and check_y1 and check_y2:
             if draw:
                 player_health, enemy_health = explosion(shellPos[0], shellPos[1], mainTankX, enemyTankX, player_health, enemy_health, shell_type)
@@ -257,7 +250,6 @@ def fireShell(x, angle, fire_power, xlocation, randomHeight, draw, mainTankX, en
                 enemy_health -= shell_type.hit_damage
                 return player_health, enemy_health
         if shellPos[1] > display_height - ground_height:
-            # hit_x = xo + power_x*((power_y+(power_y**2 + 2*a*(turPosY + display_height - ground_height - yo))**0.5)/a)
             hit_x = shellPos[0]
             hit_y = display_height - ground_height - 2
             if not draw:
@@ -354,7 +346,6 @@ def enemy_move(enemyTankX, tankSpeed, enemyAngle, fire_power, enemy_power, playe
         draw_everything(fire_power, enemy_power, wind, player_health, enemy_health, mainTankX, turretAngle, enemyTankX, enemyAngle, xlocation, randomHeight, shell_type)
         pygame.display.update()
         clock.tick(FPS)
-    # ideal_power = ((2*(((enemyTankX+tankHeight*math.sin(enemyAngle)-mainTankX-2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY))**2-(a**2-1)*((enemyTankX+tankHeight*math.sin(enemyAngle))**2+mainTankX**2-2*(enemyTankX+tankHeight*math.sin(enemyAngle))*mainTankX))**0.5-enemyTankX-tankHeight*math.sin(enemyAngle)+mainTankX+2*math.sin(enemyAngle)*a*(2*tankHeight*math.cos(enemyAngle)+display_height-ground_height-tankY)))/((a**2-1)*math.sin(2*enemyAngle)))**0.5
     if bot_power == 0:
         i_power = ideal_power
     else:
